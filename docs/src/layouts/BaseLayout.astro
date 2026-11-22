@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import interTightUrl from "../assets/fonts/InterTight-Latin-400-500-5.3.0.woff2?url";
 import CodePackageManagers from "../components/CodePackageManagers.astro";
 import type { SocialImage } from "../data/social-images";
 import { NAV_ENTRIES, TICKER_NAMES } from "../nav";
@@ -29,6 +30,7 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="preload" href={interTightUrl} as="font" type="font/woff2" crossorigin="anonymous" />
 		<script is:inline>
 			try {
 				document.documentElement.dataset.theme = localStorage.getItem("pplnd-theme") === "dark" ? "dark" : "light";
@@ -57,9 +59,6 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 			</>
 		)}
 		<link id="site-favicon" rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5.3.0/400.css" />
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5.3.0/500.css" />
 	</head>
 	<body id="top">
 		<div class="ticker" aria-hidden="true">

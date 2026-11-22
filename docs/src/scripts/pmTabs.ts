@@ -51,7 +51,7 @@ export class PplndPmTabs extends HTMLElement {
 			arrowCenter = nextCenter;
 		};
 
-		const syncSelection = (animate = false): void => {
+		const syncSelection = (): void => {
 			active = tabs.find((tab) => tab.dataset.pm === preferredManager) || defaultTab;
 			for (const tab of tabs) {
 				const selected = tab === active;
@@ -62,7 +62,6 @@ export class PplndPmTabs extends HTMLElement {
 			if (prompt) {
 				code.replaceChildren(prompt, document.createTextNode(active.dataset.pmCmd || ""));
 			}
-			positionArrow(animate);
 		};
 
 		const selectManager = (tab: HTMLButtonElement): void => {
@@ -100,10 +99,17 @@ export class PplndPmTabs extends HTMLElement {
 			}, { signal });
 		}
 
-		managerPreference.addEventListener("change", () => syncSelection(true), { signal });
-		managerPreference.addEventListener("restore", () => syncSelection(), { signal });
+		managerPreference.addEventListener("change", () => {
+			syncSelection();
+			positionArrow(true);
+		}, { signal });
+		managerPreference.addEventListener("restore", () => {
+			syncSelection();
+			positionArrow();
+		}, { signal });
 		syncSelection();
 
+		// The first resize observation positions the arrow after initial layout.
 		const resize = new ResizeObserver(() => positionArrow());
 		resize.observe(this);
 		for (const tab of tabs) {

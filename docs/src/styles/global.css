@@ -1,3 +1,12 @@
+/* From @fontsource-variable/inter-tight@5.3.0, restricted to 400–500 with FontTools.
+   fonttools varLib.instancer inter-tight-latin-wght-normal.woff2 wght=400:500 --no-recalc-timestamp -o InterTight-Latin-400-500-5.3.0.woff2 */
+@font-face {
+	font-family: "Inter Tight";
+	src: url("../assets/fonts/InterTight-Latin-400-500-5.3.0.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400 500;
+	font-display: swap;
+}
 @font-face {
 	font-family: "Iosevka Fixed";
 	src: url("../assets/fonts/IosevkaFixed-Regular-34.9.1.woff2") format("woff2");
@@ -262,8 +271,6 @@ a:hover, button:hover {
 	position: sticky;
 	top: 16px;
 	margin-top: 28px;
-	container-type: scroll-state;
-	container-name: left-rail;
 }
 .go-up-wrap {
 	display: grid;
@@ -281,13 +288,6 @@ a:hover, button:hover {
 	grid-template-rows: 1fr;
 	transform: translateY(0);
 	margin-bottom: 24px;
-}
-@container left-rail scroll-state(stuck: top) {
-	.go-up-wrap {
-		grid-template-rows: 1fr;
-		transform: translateY(0);
-		margin-bottom: 24px;
-	}
 }
 .go-up {
 	display: inline-flex;
