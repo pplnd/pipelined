@@ -1,3 +1,19 @@
+@font-face {
+	font-family: "Iosevka Fixed";
+	src: url("../assets/fonts/IosevkaFixed-Regular-34.9.1.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	unicode-range: U+0020-007E, U+00A0-017F, U+0300-036F, U+2000-206F, U+2190-21FF, U+2200-22FF, U+2500-257F, U+2713;
+}
+@font-face {
+	font-family: "Iosevka Fixed";
+	src: url("../assets/fonts/IosevkaFixed-Medium-34.9.1.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	unicode-range: U+0020-007E, U+00A0-017F, U+0300-036F, U+2000-206F, U+2190-21FF, U+2200-22FF, U+2500-257F, U+2713;
+}
 * {
 	box-sizing: border-box;
 }
@@ -15,7 +31,7 @@
 	--pplnd-nav: clamp(18px, 1.94vw, 30px);
 	--pplnd-rule: 1.5px;
 	--pplnd-sans: "Inter Tight", Arial, Helvetica, sans-serif;
-	--pplnd-mono: "Iosevka", ui-monospace, monospace;
+	--pplnd-mono: "Iosevka Fixed", ui-monospace, monospace;
 	--pplnd-code-fg: #222630;
 	--pplnd-code-bg: var(--pplnd-paper);
 	--pplnd-code-comment: #676173;
@@ -690,6 +706,11 @@ a:hover, button:hover {
 	max-width: 100%;
 }
 .search-item:hover .search-item-title {
+	text-decoration: underline;
+	text-underline-offset: 0.12em;
+}
+.search-more {
+	margin-top: 24px;
 	text-decoration: underline;
 	text-underline-offset: 0.12em;
 }

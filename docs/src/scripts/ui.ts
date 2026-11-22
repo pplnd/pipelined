@@ -1,6 +1,13 @@
 import type { SearchEntry } from "../nav";
-import { initFooterLogo } from "./footerLogo";
 import { PplndPmTabs } from "./pmTabs";
+
+const searchPageSize = 40;
+
+interface SearchIndex {
+	entries?: readonly SearchEntry[];
+	loading?: boolean;
+	failed?: boolean;
+}
 
 function rankEntry(entry: SearchEntry, needle: string): number {
 	const label = entry.label.toLowerCase();
@@ -33,13 +40,17 @@ function isPrimaryClick(event: MouseEvent): boolean {
 
 class PplndSearch extends HTMLElement {
 	private abort: AbortController | null = null;
-	private entries: readonly SearchEntry[] = [];
-	private fullIndexPromise: Promise<void> | null = null;
+	private readonly starterIndex: SearchIndex = {};
+	private readonly fullIndex: SearchIndex = {};
+	private query = "";
+	private matchingEntries: readonly SearchEntry[] = [];
+	private resultLimit = searchPageSize;
 	private dialog: HTMLDialogElement | null = null;
 	private input: HTMLInputElement | null = null;
 	private clearBtn: HTMLButtonElement | null = null;
 	private countEl: HTMLElement | null = null;
 	private resultsEl: HTMLUListElement | null = null;
+	private moreBtn: HTMLButtonElement | null = null;
 	private noResultsEl: HTMLElement | null = null;
 	private itemTpl: HTMLTemplateElement | null = null;
 
@@ -57,26 +68,26 @@ class PplndSearch extends HTMLElement {
 		this.clearBtn = this.querySelector<HTMLButtonElement>("#search-clear");
 		this.countEl = this.querySelector<HTMLElement>("#search-count");
 		this.resultsEl = this.querySelector<HTMLUListElement>(".search-results");
+		this.moreBtn = this.querySelector<HTMLButtonElement>(".search-more");
 		this.noResultsEl = this.querySelector<HTMLElement>(".no-results");
 		this.itemTpl = this.querySelector<HTMLTemplateElement>("[data-search-item-tpl]");
 
-		const rawIndex = this.querySelector("#search-index")?.textContent
-			|| document.querySelector("#search-index")?.textContent || "[]";
-		try {
-			this.entries = JSON.parse(rawIndex) as SearchEntry[];
-		} catch {
-			this.entries = [];
-		}
-
-		this.input?.addEventListener("input", () => this.filterModules(), { signal });
-		this.querySelector(".search-form")?.addEventListener("submit", (event) => event.preventDefault(), { signal });
+		this.input?.addEventListener("input", () => this.updateQuery(), { signal });
+		this.querySelector(".search-form")?.addEventListener("submit", (event) => {
+			event.preventDefault();
+			this.updateQuery();
+		}, { signal });
+		this.moreBtn?.addEventListener("click", () => {
+			this.resultLimit += searchPageSize;
+			this.renderResults(true);
+		}, { signal });
 		this.clearBtn?.addEventListener("click", (event) => {
 			event.preventDefault();
 			if (!this.input) {
 				return;
 			}
 			this.input.value = "";
-			this.filterModules();
+			this.updateQuery();
 			this.input.focus();
 		}, { signal });
 		this.dialog?.addEventListener("close", () => this.syncSearchUrl(false), { signal });
@@ -109,23 +120,54 @@ class PplndSearch extends HTMLElement {
 		if (!this.dialog.open) {
 			this.dialog.showModal();
 		}
-		void this.loadFullSearchIndex();
-		this.filterModules();
+		this.resultLimit = searchPageSize;
+		this.updateQuery();
 		this.input.focus();
 	}
 
-	private loadFullSearchIndex(): Promise<void> {
-		if (this.fullIndexPromise) {
-			return this.fullIndexPromise;
+	warmStarter(): void {
+		void this.loadIndex(this.starterIndex, this.dataset.starterIndex);
+	}
+
+	private async loadIndex(index: SearchIndex, url: string | undefined): Promise<void> {
+		if (!url || index.entries || index.loading) {
+			return;
 		}
-		this.fullIndexPromise = fetch("/search-index.json").then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
-			.then((items) => {
-				if (Array.isArray(items) && items.length) {
-					this.entries = items as SearchEntry[];
-					this.filterModules();
+		index.loading = true;
+		index.failed = false;
+		try {
+			const response = await fetch(url);
+			if (response.ok) {
+				const entries: unknown = await response.json();
+				if (Array.isArray(entries)) {
+					index.entries = entries as SearchEntry[];
 				}
-			}).catch(() => {});
-		return this.fullIndexPromise;
+			}
+		} catch {
+			// The next search attempt can retry the request.
+		}
+		index.loading = false;
+		index.failed = !index.entries;
+		if (this.isConnected && this.isOpen && (index === this.fullIndex || !this.query || !this.fullIndex.entries)) {
+			this.filterModules();
+		}
+	}
+
+	private updateQuery(): void {
+		if (!this.input) {
+			return;
+		}
+		const query = this.input.value.trim().toLowerCase();
+		if (this.query !== query) {
+			this.query = query;
+			this.resultLimit = searchPageSize;
+		}
+		this.warmStarter();
+		if (query) {
+			void this.loadIndex(this.fullIndex, "/search-index.json");
+		}
+		this.filterModules();
+		this.syncSearchUrl(true);
 	}
 
 	private syncSearchUrl(open: boolean): void {
@@ -175,11 +217,9 @@ class PplndSearch extends HTMLElement {
 	}
 
 	private filterModules(): void {
-		if (!this.dialog || !this.input || !this.resultsEl || !this.noResultsEl) {
-			return;
-		}
-		const needle = this.input.value.trim().toLowerCase();
-		const matches = this.entries.filter((entry) =>
+		const needle = this.query;
+		const entries = (needle ? this.fullIndex.entries : undefined) ?? this.starterIndex.entries ?? [];
+		const matches = entries.filter((entry) =>
 			!needle
 			|| entry.label.toLowerCase().includes(needle)
 			|| entry.section.toLowerCase().includes(needle)
@@ -189,26 +229,88 @@ class PplndSearch extends HTMLElement {
 		if (needle) {
 			matches.sort((a, b) => rankEntry(a, needle) - rankEntry(b, needle));
 		}
-		const visible = matches.slice(0, 240);
-		this.resultsEl.replaceChildren(...visible.map((entry) => this.createResultNode(entry)));
+		this.matchingEntries = matches;
+		this.renderResults();
+	}
+
+	private renderResults(append = false): void {
+		if (!this.resultsEl || !this.noResultsEl) {
+			return;
+		}
+		const start = append ? this.resultsEl.childElementCount : 0;
+		const nodes = this.matchingEntries.slice(start, this.resultLimit).map((entry) => this.createResultNode(entry));
+		const restoreFocus = append && document.activeElement === this.moreBtn;
+		if (append) {
+			this.resultsEl.append(...nodes);
+		} else {
+			const active = document.activeElement;
+			const focusedHref = active instanceof HTMLAnchorElement && this.resultsEl.contains(active) ? active.href : null;
+			this.resultsEl.replaceChildren(...nodes);
+			if (focusedHref) {
+				const replacement = [...this.resultsEl.querySelectorAll("a")].find((link) => link.href === focusedHref);
+				(replacement ?? this.input)?.focus({ preventScroll: true });
+			}
+		}
+		if (restoreFocus) {
+			this.resultsEl.children[start]?.querySelector("a")?.focus();
+		}
+
+		const index = this.query ? this.fullIndex : this.starterIndex;
+		const hasMore = this.matchingEntries.length > this.resultLimit;
+		if (this.moreBtn) {
+			this.moreBtn.hidden = !hasMore;
+		}
 		if (this.clearBtn) {
-			this.clearBtn.hidden = this.input.value.length === 0;
+			this.clearBtn.hidden = !this.input?.value.length;
 		}
 		if (this.countEl) {
-			this.countEl.textContent = matches.length > 240
-				? `Results: ${matches.length} (showing 240)`
-				: `Results: ${matches.length}`;
+			const summary = hasMore
+				? `Results: ${this.matchingEntries.length} (showing ${this.resultLimit})`
+				: `Results: ${this.matchingEntries.length}`;
+			let status = "";
+			if (index.loading) {
+				status = this.query ? "Searching all documentation…" : "Loading search…";
+			} else if (index.failed) {
+				status = this.query ? "Full search is unavailable." : "Search is unavailable.";
+			}
+			this.countEl.textContent = status && this.matchingEntries.length ? `${status} ${summary}` : status || summary;
 		}
-		this.noResultsEl.hidden = matches.length !== 0;
-		if (this.dialog.open) {
-			this.syncSearchUrl(true);
-		}
+		this.noResultsEl.hidden = !index.entries || this.matchingEntries.length !== 0;
 	}
+}
+
+function deferFooterLogo(): void {
+	const footer = document.querySelector(".foot");
+	if (!footer) {
+		return;
+	}
+	const motion = matchMedia("(prefers-reduced-motion: no-preference)");
+	const controller = new AbortController();
+	const observer = new IntersectionObserver(([entry], currentObserver) => {
+		if (!entry?.isIntersecting || !motion.matches) {
+			return;
+		}
+		currentObserver.disconnect();
+		controller.abort();
+		void import("./footerLogo").then(({ initFooterLogo }) => initFooterLogo()).catch(() => {});
+	}, { rootMargin: "160px 0px" });
+	const syncObservation = (): void => {
+		if (motion.matches) {
+			observer.observe(footer);
+		} else {
+			observer.disconnect();
+		}
+	};
+	motion.addEventListener("change", syncObservation, { signal: controller.signal });
+	syncObservation();
 }
 
 function initShell(): void {
 	const searchEl = document.querySelector<PplndSearch>("pplnd-search");
 	for (const trigger of document.querySelectorAll<HTMLButtonElement>(".search")) {
+		const warmSearch = (): void => searchEl?.warmStarter();
+		trigger.addEventListener("pointerenter", warmSearch);
+		trigger.addEventListener("focus", warmSearch);
 		trigger.addEventListener("click", () => searchEl?.open(""));
 	}
 
@@ -335,7 +437,7 @@ function initShell(): void {
 		notFoundSearchBtn?.addEventListener("click", () => searchEl?.open(slug));
 	}
 
-	initFooterLogo();
+	deferFooterLogo();
 }
 
 if (!customElements.get("pplnd-pm-tabs")) {

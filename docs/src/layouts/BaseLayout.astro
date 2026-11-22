@@ -2,7 +2,8 @@
 import "../styles/global.css";
 import CodePackageManagers from "../components/CodePackageManagers.astro";
 import type { SocialImage } from "../data/social-images";
-import { NAV_ENTRIES, SEARCH_ITEMS, TICKER_NAMES } from "../nav";
+import { NAV_ENTRIES, TICKER_NAMES } from "../nav";
+import { starterSearchHash } from "../searchStarter";
 
 export interface Props {
 	title: string;
@@ -59,8 +60,6 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 		<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5.3.0/400.css" />
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter-tight@5.3.0/500.css" />
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka@5.3.0/400.css" />
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka@5.3.0/500.css" />
 	</head>
 	<body id="top">
 		<div class="ticker" aria-hidden="true">
@@ -198,7 +197,7 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 			</div>
 		</footer>
 
-		<pplnd-search>
+		<pplnd-search data-starter-index={`/search-starter/${starterSearchHash}.json`}>
 			<dialog class="search-dialog" aria-label="Search documentation">
 				<div class="search-main">
 					<div class="search-bar">
@@ -219,6 +218,7 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 					</div>
 					<div class="search-count" id="search-count" aria-live="polite"></div>
 					<ul class="search-results"></ul>
+					<button class="search-more" type="button" hidden>Show more</button>
 					<p class="no-results" hidden>No matching modules.</p>
 				</div>
 			</dialog>
@@ -230,7 +230,6 @@ const socialImageUrl = socialImage && new URL(socialImage.path, canonicalUrl).hr
 					</a>
 				</li>
 			</template>
-			<script type="application/json" id="search-index" is:inline set:html={JSON.stringify(SEARCH_ITEMS)} />
 		</pplnd-search>
 
 		<script>
