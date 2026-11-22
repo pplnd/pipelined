@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # Dependabot updates TypeScript across the pnpm workspace together.
+      # Keep the docs on 6.0.x until TypeDoc supports TypeScript 7.
+      - dependency-name: "typescript"
     groups:
       dependencies:
         patterns:
