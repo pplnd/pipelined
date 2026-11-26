@@ -503,12 +503,9 @@ a:hover, button:hover {
 	color: var(--pplnd-muted);
 }
 .choosing-cta {
-	margin: clamp(48px, 5vw, 84px) 6px 16px;
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: center;
-	gap: clamp(16px, 2.2vw, 32px);
-	width: calc(100% - 12px);
+	display: block;
+	margin-inline: 6px;
+	text-align: center;
 	padding: clamp(22px, 2.5vw, 36px) clamp(32px, 4vw, 56px);
 	border: var(--pplnd-rule) solid var(--pplnd-ink);
 	color: var(--pplnd-ink);
@@ -521,36 +518,13 @@ a:hover, button:hover {
 	background: var(--pplnd-ink);
 	color: var(--pplnd-paper);
 }
-.choosing-copy {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	min-width: 0;
-	text-align: center;
-}
-.choosing-kicker {
-	font: 13px/1.2 var(--pplnd-mono);
-	opacity: 0.68;
-}
 .choosing-title {
 	font-size: clamp(22px, 2.25vw, 36px);
 	line-height: 1.06;
 	letter-spacing: -0.028em;
 }
-.choosing-arrow {
-	width: clamp(44px, 4.2vw, 64px);
-	height: 24px;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: var(--pplnd-rule);
-	flex: none;
-	transition: transform 180ms ease;
-}
-.choosing-cta:hover .choosing-arrow {
-	transform: translateX(6px);
-}
 @media (prefers-reduced-motion: reduce) {
-	.choosing-cta, .choosing-arrow {
+	.choosing-cta {
 		transition: none;
 	}
 }
@@ -835,15 +809,10 @@ a:hover, button:hover {
 		grid-column: 1 / -1;
 		margin: 40px 6px 12px 24px;
 		padding: 20px 28px;
-		width: auto;
-		gap: 14px;
-		transform: rotate(var(--pplnd-cta-angle, -1.4deg));
+		transform: rotate(var(--pplnd-cta-angle, -4deg));
 	}
 	.choosing-title {
 		font-size: 20px;
-	}
-	.choosing-arrow {
-		width: 34px;
 	}
 	.left {
 		display: none;

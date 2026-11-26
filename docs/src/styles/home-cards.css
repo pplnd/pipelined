@@ -1,5 +1,10 @@
+.home-right {
+	display: flex;
+	flex-direction: column;
+	gap: clamp(32px, 3.3vw, 62px);
+	padding-block-end: 16px;
+}
 .cards {
-	margin-top: clamp(32px, 3.3vw, 62px);
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 42px 14px;
@@ -85,6 +90,14 @@
 .card:hover .card-title {
 	text-decoration: underline;
 	text-underline-offset: 0.12em;
+}
+@media (min-width: 768px) {
+	/* The CTA is rotated, so its box rises above the flex gap by about tan(4deg) * width / 2.
+	   A percentage margin resolves against the container's inline size, which tracks that overhang
+	   at every width. */
+	.home-right > .choosing-cta {
+		margin-block-start: 3.5%;
+	}
 }
 @media (min-width: 768px) and (max-width: 1050px) {
 	.cards {
